@@ -1,11 +1,8 @@
-# This config was automatically generated from your source code
-# Stacks detected: cicd:github-actions:.github/workflows,deps:python:.,file:setup.py:.
 version: 2.1
 orbs:
   python: circleci/python@2
 jobs:
   test-python:
-    # Install dependencies and run tests
     docker:
       - image: cimg/python:3.8-node
     steps:
@@ -18,7 +15,6 @@ jobs:
       - store_test_results:
           path: junit.xml
   build-package:
-    # build python package
     docker:
       - image: cimg/python:3.8-node
     steps:
@@ -30,18 +26,32 @@ jobs:
       - store_artifacts:
           path: dist
           destination: ~/artifacts
-  deploy:
-    # This is an example deploy job, not actually used by the workflow
+  playwright-e2e:
     docker:
-      - image: cimg/base:stable
+      - image: mcr.microsoft.com/playwright:v1.44.0-jammy
     steps:
-      # Replace this with steps to deploy to users
+      - checkout
       - run:
-          name: deploy
-          command: '#e.g. ./deploy.sh'
+          name: Install dependencies
+          command: |
+            if [ -f package-lock.json ]; then
+              npm ci
+            elif [ -f yarn.lock ]; then
+              yarn install --frozen-lockfile
+            else
+              npm install
+            fi
       - run:
-          name: found github actions config
-          command: ':'
+          name: Install Playwright Browsers
+          command: npx playwright install --with-deps
+      - run:
+          name: Run Playwright E2E Tests
+          command: npx playwright test
+      - store_artifacts:
+          path: test-results
+          destination: playwright-test-results
+      - store_test_results:
+          path: test-results
 workflows:
   build-and-test:
     jobs:
@@ -49,6 +59,6 @@ workflows:
       - build-package:
           requires:
             - test-python
-    # - deploy:
-    #     requires:
-    #       - build-package
+      - playwright-e2e:
+          requires:
+            - build-package
