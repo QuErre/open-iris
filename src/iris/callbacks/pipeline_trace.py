@@ -49,22 +49,17 @@ class PipelineCallTraceStorage:
         """
         return len(self._storage.keys())
 
-    def get(self, result_name: str) -> Any:
+    def get(self, result_name: str, default: Any = None) -> Any:
         """Get result_name result.
 
         Args:
             result_name (str): Result name.
-
-        Raises:
-            PipelineCallTraceStorageError: Raised if result_name is not found.
+            default (Any): Default value to return if result_name is not found.
 
         Returns:
             Any: Result object.
         """
-        if result_name not in self._storage.keys():
-            raise PipelineCallTraceStorageError(f"Unknown result name: {result_name}")
-
-        return self._storage[result_name]
+        return self._storage.get(result_name, default)
 
     def get_input(self) -> Any:
         """Return pipeline input.
